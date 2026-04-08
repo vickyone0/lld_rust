@@ -3,6 +3,7 @@ mod dyn_trait;
 mod trait_object;
 mod stratergy_pattern;
 mod adapter_pattern;
+mod bridge_pattern;
 
 //use defult_method::*;
 use defult_method::Describe;
@@ -10,6 +11,7 @@ use defult_method::Describe;
 use trait_object::*;
 use stratergy_pattern::*;
 use adapter_pattern::*;
+use bridge_pattern::*;
 
 fn main() {
 
@@ -61,21 +63,54 @@ fn main() {
     // }));
     // calculator.calculate(100.0);
 
-    let gateway: Box<dyn PaymentGateway> = match std::env::var("PAYMENT_GATEWAY")
-        .unwrap_or(String::from("razorpay"))
-        .as_str()
-    {
-        "stripe"   => Box::new(StripeAdapter::new("sk_test_abc123xyz")),
-        "paypal"   => Box::new(PayPalAdapter::new("AYSq3R...", true)),
-        _          => Box::new(RazorpayAdapter::new("rzp_test_abc", "secret_xyz")),
-    };
+    // let gateway: Box<dyn PaymentGateway> = match std::env::var("PAYMENT_GATEWAY")
+    //     .unwrap_or(String::from("razorpay"))
+    //     .as_str()
+    // {
+    //     "stripe"   => Box::new(StripeAdapter::new("sk_test_abc123xyz")),
+    //     "paypal"   => Box::new(PayPalAdapter::new("AYSq3R...", true)),
+    //     _          => Box::new(RazorpayAdapter::new("rzp_test_abc", "secret_xyz")),
+    // };
 
-    let service = OrderService::new(gateway);
+    // let service = OrderService::new(gateway);
 
-    // Checkout
-    if let Ok(txn_id) = service.checkout(1001, 49900) {  // Rs. 499
-        // Cancel if needed
-        service.cancel_order(&txn_id);
-    }
+    // // Checkout
+    // if let Ok(txn_id) = service.checkout(1001, 49900) {  // Rs. 499
+    //     // Cancel if needed
+    //     service.cancel_order(&txn_id);
+    // }
+
+    
+
+    let service = AlertService;
+
+    println!("=== Low urgency via Email ===");
+    let low_email = LowUrgencyNotification::new(
+        Box::new(EmailSender::new("smtp.gmail.com"))
+    );
+    service.send_alert(&low_email, "user@example.com", "Your report is ready");
+
+    println!("\n=== High urgency via SMS ===");
+    let high_sms = HighUrgencyNotification::new(
+        Box::new(SmsSender::new("twilio_key_abc123")),
+        "Payments",
+    );
+    service.send_alert(&high_sms, "+919876543210", "Payment gateway is down");
+
+    println!("\n=== High urgency via Push ===");
+    let high_push = HighUrgencyNotification::new(
+        Box::new(PushSender::new("dvion-prod")),
+        "Security",
+    );
+    service.send_alert(&high_push, "device_token_xyz", "Unusual login detected");
+
+    println!("\n=== Critical — all channels at once ===");
+    let critical = CriticalNotification::new(vec![
+        Box::new(EmailSender::new("smtp.gmail.com")),
+        Box::new(SmsSender::new("twilio_key_abc123")),
+        Box::new(PushSender::new("dvion-prod")),
+    ]);
+    service.send_alert(&critical, "admin@dvion.com", "Server is unreachable");
+
 }
 
