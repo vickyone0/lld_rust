@@ -4,6 +4,7 @@ mod trait_object;
 mod stratergy_pattern;
 mod adapter_pattern;
 mod bridge_pattern;
+mod chainofresponsibility_pattern;
 
 //use defult_method::*;
 use defult_method::Describe;
@@ -12,6 +13,7 @@ use trait_object::*;
 use stratergy_pattern::*;
 use adapter_pattern::*;
 use bridge_pattern::*;
+use chainofresponsibility_pattern::*;
 
 fn main() {
 
@@ -82,35 +84,73 @@ fn main() {
 
     
 
-    let service = AlertService;
+    // let service = AlertService;
 
-    println!("=== Low urgency via Email ===");
-    let low_email = LowUrgencyNotification::new(
-        Box::new(EmailSender::new("smtp.gmail.com"))
+    // println!("=== Low urgency via Email ===");
+    // let low_email = LowUrgencyNotification::new(
+    //     Box::new(EmailSender::new("smtp.gmail.com"))
+    // );
+    // service.send_alert(&low_email, "user@example.com", "Your report is ready");
+
+    // println!("\n=== High urgency via SMS ===");
+    // let high_sms = HighUrgencyNotification::new(
+    //     Box::new(SmsSender::new("twilio_key_abc123")),
+    //     "Payments",
+    // );
+    // service.send_alert(&high_sms, "+919876543210", "Payment gateway is down");
+
+    // println!("\n=== High urgency via Push ===");
+    // let high_push = HighUrgencyNotification::new(
+    //     Box::new(PushSender::new("dvion-prod")),
+    //     "Security",
+    // );
+    // service.send_alert(&high_push, "device_token_xyz", "Unusual login detected");
+
+    // println!("\n=== Critical — all channels at once ===");
+    // let critical = CriticalNotification::new(vec![
+    //     Box::new(EmailSender::new("smtp.gmail.com")),
+    //     Box::new(SmsSender::new("twilio_key_abc123")),
+    //     Box::new(PushSender::new("dvion-prod")),
+    // ]);
+    // service.send_alert(&critical, "admin@dvion.com", "Server is unreachable");
+    
+    let pipeline = Pipeline::new()
+        .add(Box::new(LoggingMiddleware))
+        .add(Box::new(AuthMiddleware::new(vec!["token_alice", "token_bob"])))
+        .add(Box::new(RateLimitMiddleware::new(2)))
+        .add(Box::new(RouteHandler::new()));
+
+        // Case 1: Valid request — passes through all middleware
+    let resp = pipeline.run(
+        &Request::new("GET", "/users")
+            .with_token("token_alice")
+            .with_ip("10.0.0.1")
     );
-    service.send_alert(&low_email, "user@example.com", "Your report is ready");
+    println!("  Response: {} — {}\n", resp.status, resp.body);
 
-    println!("\n=== High urgency via SMS ===");
-    let high_sms = HighUrgencyNotification::new(
-        Box::new(SmsSender::new("twilio_key_abc123")),
-        "Payments",
+    // Case 2: Missing token — rejected at Auth
+    let resp = pipeline.run(
+        &Request::new("GET", "/users")
+            .with_ip("10.0.0.2")
     );
-    service.send_alert(&high_sms, "+919876543210", "Payment gateway is down");
+    println!("  Response: {} — {}\n", resp.status, resp.body);
 
-    println!("\n=== High urgency via Push ===");
-    let high_push = HighUrgencyNotification::new(
-        Box::new(PushSender::new("dvion-prod")),
-        "Security",
+    // Case 3: Invalid token — rejected at Auth
+    let resp = pipeline.run(
+        &Request::new("GET", "/users")
+            .with_token("hacker_token")
+            .with_ip("10.0.0.3")
     );
-    service.send_alert(&high_push, "device_token_xyz", "Unusual login detected");
+    println!("  Response: {} — {}\n", resp.status, resp.body);
 
-    println!("\n=== Critical — all channels at once ===");
-    let critical = CriticalNotification::new(vec![
-        Box::new(EmailSender::new("smtp.gmail.com")),
-        Box::new(SmsSender::new("twilio_key_abc123")),
-        Box::new(PushSender::new("dvion-prod")),
-    ]);
-    service.send_alert(&critical, "admin@dvion.com", "Server is unreachable");
-
+     for i in 1..=3 {
+        println!("  -- attempt {} --", i);
+        let resp = pipeline.run(
+            &Request::new("GET", "/health")
+                .with_token("token_bob")
+                .with_ip("10.0.0.4")
+        );
+        println!("  Response: {} — {}\n", resp.status, resp.body);
+    }
 }
 
