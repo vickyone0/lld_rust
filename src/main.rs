@@ -5,6 +5,7 @@ mod stratergy_pattern;
 mod adapter_pattern;
 mod bridge_pattern;
 mod chainofresponsibility_pattern;
+mod command_pattern;
 
 //use defult_method::*;
 use defult_method::Describe;
@@ -14,6 +15,10 @@ use stratergy_pattern::*;
 use adapter_pattern::*;
 use bridge_pattern::*;
 use chainofresponsibility_pattern::*;
+use command_pattern::*;
+
+use std::rc::Rc;
+use std::cell::RefCell;
 
 fn main() {
 
@@ -114,43 +119,80 @@ fn main() {
     // ]);
     // service.send_alert(&critical, "admin@dvion.com", "Server is unreachable");
     
-    let pipeline = Pipeline::new()
-        .add(Box::new(LoggingMiddleware))
-        .add(Box::new(AuthMiddleware::new(vec!["token_alice", "token_bob"])))
-        .add(Box::new(RateLimitMiddleware::new(2)))
-        .add(Box::new(RouteHandler::new()));
+    // let pipeline = Pipeline::new()
+    //     .add(Box::new(LoggingMiddleware))
+    //     .add(Box::new(AuthMiddleware::new(vec!["token_alice", "token_bob"])))
+    //     .add(Box::new(RateLimitMiddleware::new(2)))
+    //     .add(Box::new(RouteHandler::new()));
 
-        // Case 1: Valid request — passes through all middleware
-    let resp = pipeline.run(
-        &Request::new("GET", "/users")
-            .with_token("token_alice")
-            .with_ip("10.0.0.1")
-    );
-    println!("  Response: {} — {}\n", resp.status, resp.body);
+    //     // Case 1: Valid request — passes through all middleware
+    // let resp = pipeline.run(
+    //     &Request::new("GET", "/users")
+    //         .with_token("token_alice")
+    //         .with_ip("10.0.0.1")
+    // );
+    // println!("  Response: {} — {}\n", resp.status, resp.body);
 
-    // Case 2: Missing token — rejected at Auth
-    let resp = pipeline.run(
-        &Request::new("GET", "/users")
-            .with_ip("10.0.0.2")
-    );
-    println!("  Response: {} — {}\n", resp.status, resp.body);
+    // // Case 2: Missing token — rejected at Auth
+    // let resp = pipeline.run(
+    //     &Request::new("GET", "/users")
+    //         .with_ip("10.0.0.2")
+    // );
+    // println!("  Response: {} — {}\n", resp.status, resp.body);
 
-    // Case 3: Invalid token — rejected at Auth
-    let resp = pipeline.run(
-        &Request::new("GET", "/users")
-            .with_token("hacker_token")
-            .with_ip("10.0.0.3")
-    );
-    println!("  Response: {} — {}\n", resp.status, resp.body);
+    // // Case 3: Invalid token — rejected at Auth
+    // let resp = pipeline.run(
+    //     &Request::new("GET", "/users")
+    //         .with_token("hacker_token")
+    //         .with_ip("10.0.0.3")
+    // );
+    // println!("  Response: {} — {}\n", resp.status, resp.body);
 
-     for i in 1..=3 {
-        println!("  -- attempt {} --", i);
-        let resp = pipeline.run(
-            &Request::new("GET", "/health")
-                .with_token("token_bob")
-                .with_ip("10.0.0.4")
-        );
-        println!("  Response: {} — {}\n", resp.status, resp.body);
-    }
+    //  for i in 1..=3 {
+    //     println!("  -- attempt {} --", i);
+    //     let resp = pipeline.run(
+    //         &Request::new("GET", "/health")
+    //             .with_token("token_bob")
+    //             .with_ip("10.0.0.4")
+    //     );
+    //     println!("  Response: {} — {}\n", resp.status, resp.body);
+    // }
+    
+     let tv     = Rc::new(RefCell::new(Television::new()));
+    let mut remote = Remote::new();
+
+    println!("--- Starting state ---");
+    tv.borrow().show();
+
+    println!("\n--- Press volume up x2 ---");
+    remote.press(Box::new(VolumeUpCommand::new(Rc::clone(&tv), 1)));
+    remote.press(Box::new(VolumeUpCommand::new(Rc::clone(&tv), 1)));
+    tv.borrow().show();
+
+    println!("\n--- Press mute ---");
+    remote.press(Box::new(MuteCommand::new(Rc::clone(&tv))));
+    tv.borrow().show();
+
+    println!("\n--- Undo mute ---");
+    remote.undo_last();
+    tv.borrow().show();
+
+    println!("\n--- Switch to channel 7 ---");
+    remote.press(Box::new(ChannelCommand::new(Rc::clone(&tv), 7)));
+    tv.borrow().show();
+
+    println!("\n--- Switch to channel 20 ---");
+    remote.press(Box::new(ChannelCommand::new(Rc::clone(&tv), 20)));
+    tv.borrow().show();
+
+
+    println!("\n--- Undo channel (go back to 7) ---");
+    remote.undo_last();
+    tv.borrow().show();
+
+    println!("\n--- Undo channel again (go back to 1) ---");
+    remote.undo_last();
+    tv.borrow().show();
+
 }
 
