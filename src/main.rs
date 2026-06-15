@@ -6,7 +6,9 @@ mod adapter_pattern;
 mod bridge_pattern;
 mod chainofresponsibility_pattern;
 mod command_pattern;
-
+mod hashing;
+mod sliding_window;
+mod two_pointer;
 //use defult_method::*;
 use defult_method::Describe;
 //use dyn_trait::*;
@@ -16,6 +18,9 @@ use adapter_pattern::*;
 use bridge_pattern::*;
 use chainofresponsibility_pattern::*;
 use command_pattern::*;
+use hashing::HashQues;
+
+
 
 use std::rc::Rc;
 use std::cell::RefCell;
