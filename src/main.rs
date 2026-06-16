@@ -9,6 +9,8 @@ mod command_pattern;
 mod hashing;
 mod sliding_window;
 mod two_pointer;
+mod linked_list;
+mod binary_search;
 //use defult_method::*;
 use defult_method::Describe;
 //use dyn_trait::*;
@@ -19,6 +21,7 @@ use bridge_pattern::*;
 use chainofresponsibility_pattern::*;
 use command_pattern::*;
 use hashing::HashQues;
+
 
 
 
