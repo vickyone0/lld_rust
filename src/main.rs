@@ -11,6 +11,7 @@ mod sliding_window;
 mod two_pointer;
 mod linked_list;
 mod binary_search;
+mod heap;
 //use defult_method::*;
 use defult_method::Describe;
 //use dyn_trait::*;
@@ -22,6 +23,9 @@ use chainofresponsibility_pattern::*;
 use command_pattern::*;
 use hashing::HashQues;
 
+use binary_search::*;
+use heap::*;
+
 
 
 
@@ -29,6 +33,21 @@ use std::rc::Rc;
 use std::cell::RefCell;
 
 fn main() {
+
+
+    let nums:Vec<i32> = vec![1, 1, 1, 2, 2, 3];
+    let target = 3;
+
+    let out = heap::Heap::top_k_frequent(nums, 2);
+
+    // let out = binary_search::BinarySearch::search(nums, target);
+    println!("{:?}",out);
+
+
+
+
+
+
 
     // let dog = Dog { name: String::from("Buddy") };
     // let robot = Robot { id: 1 };

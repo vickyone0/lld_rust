@@ -58,4 +58,24 @@ impl ListNode {
     
     dummy.next
 }
+
+pub fn has_cycle(head: Option<Box<ListNode>>) -> bool{
+
+    let mut fast = head.as_ref();
+    let mut slow = head.as_ref();
+
+    while let (Some(_f), Some(f_next)) = ( fast , fast.and_then(|n| n.next.as_ref())) {
+
+        slow = slow.unwrap().next.as_ref();
+        fast = f_next.next.as_ref();
+
+       if  std::ptr::eq(slow.unwrap().as_ref(), fast.unwrap().as_ref()){
+
+          return true;
+
+        }
+    }
+
+    return false;
+}
 }
